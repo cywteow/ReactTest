@@ -1,0 +1,13 @@
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center
+}
+
+.alert {
+  color: #a94442;
+  background-color: #f2dede;
+  border: 1px solid #DE4E4E;
+}
