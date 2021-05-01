@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import './App.css';
-import { Typography, Divider, TextField, Button, List, ListItem, ListItemText, ListItemSecondaryAction, IconButton } from '@material-ui/core'
+import { Typography, Divider, TextField, Button, List, ListItem, ListItemText, ListItemSecondaryAction, IconButton, Paper } from '@material-ui/core'
 import { makeStyles } from '@material-ui/core/styles';
 import axios from 'axios';
 import api from './config';
@@ -12,6 +12,11 @@ import clsx from 'clsx';
 const useStyles = makeStyles(theme => ({
 	root: {
     padding: '8px'
+  },
+  paper: {
+    margin: '8px',
+    border: '1px solid black',
+    borderRadius: '8px',
   },
   controls: {
     paddingTop: '8px',
@@ -34,6 +39,12 @@ const useStyles = makeStyles(theme => ({
   errorDiv: {
     marginTop: '8px',
     marginBottom: '16px'
+  },
+  noRecordDiv: {
+    display: 'flex',
+    alignItems: 'cetner',
+    justifyContent: 'center',
+    paddingTop: '30px'
   }
 }));
 
@@ -49,9 +60,11 @@ function App() {
     const param = `${city},${country}`
     axios.get(api.replace('{params}', param))
     .then(response => {
+      // Set timestamp to be used as ID as it is unique
       response.data.time = moment().format()
       setWeather(response.data);
-      setHistory([...history, response.data])
+      setHistory([response.data, ...history])
+      setError(false)
     })
     .catch(error => {
       if(error.response.status === 404){
@@ -95,66 +108,76 @@ function App() {
   }
 
   return (
-    <div className={classes.root}>
-      {/* Header */}
-      {generateHeader(`Today's Weather`)}
+    <Paper variant="outlined" className={classes.paper}>
+      <div className={classes.root}>
+        {/* Header */}
+        {generateHeader(`Today's Weather`)}
 
-      {/* Controls */}
-      <div className={classes.controls}>
-        <Typography>City:</Typography>
-        <TextField className={classes.textfield} value={city} variant="outlined" onChange={(event) => {setCity(event.target.value)}} />
-        <Typography>Country:</Typography>
-        <TextField className={classes.textfield} value={country} variant="outlined" onChange={(event) => {setCountry(event.target.value)}}/>
-        <Button variant="contained" className={classes.button} onClick={searchOnClick}>Search</Button>
-        <Button variant="contained" className={classes.button} onClick={clearOnClick}>Clear</Button>
+        {/* Controls */}
+        <div className={classes.controls}>
+          <Typography>City:</Typography>
+          <TextField className={classes.textfield} value={city} variant="outlined" onChange={(event) => {setCity(event.target.value)}} />
+          <Typography>Country:</Typography>
+          <TextField className={classes.textfield} value={country} variant="outlined" onChange={(event) => {setCountry(event.target.value)}}/>
+          <Button variant="contained" className={classes.button} onClick={searchOnClick}>Search</Button>
+          <Button variant="contained" className={classes.button} onClick={clearOnClick}>Clear</Button>
+        </div>
+
+        {/* Display Weather */}
+        {weather && (
+          <div style={{padding: '16px'}}>
+            <Typography variant='caption'>{`${weather.name}, ${weather.sys.country}`}</Typography>
+            <Typography variant='h3'>{weather.weather[0].main}</Typography>
+            {generateDiv('Description: ', weather.weather[0].description)}
+            {generateDiv('Temperature: ', `${weather.main.temp_min}°C ~ ${weather.main.temp_max}°C`)}
+            {generateDiv('Humidity: ', `${weather.main.humidity}%`)}
+            {generateDiv('Time: ', moment(weather.time).format('YYYY-MM-DD HH:mm A'))}
+          </div>
+        )}
+
+        {error && (
+          <div className={clsx("alert",classes.errorDiv)}>
+            <div style={{paddingLeft: '8px', color: 'black'}}>Not found</div>
+          </div>
+        )}
+
+        {/* Search History */}
+        {generateHeader(`Search History`)}
+        {history && history.length > 0 && (
+          <List>
+            {history.map((weather, index) => {
+              return (
+                <React.Fragment key={index}>
+                  <ListItem>
+                    <ListItemText
+                      primary={`${index+1}. ${weather.name}, ${weather.sys.country}`}
+                    />
+                    <ListItemSecondaryAction>
+                      <div className="flex items-center">
+                        <Typography>{moment(weather.time).format('HH:mm:ss A')}</Typography>
+                        <IconButton onClick={() => showPreviousOnClick(weather)}>
+                          <SearchIcon />
+                        </IconButton>
+                        <IconButton onClick={() => deleteOnClick(weather.time)}>
+                          <DeleteIcon />
+                        </IconButton>
+                      </div>
+                    </ListItemSecondaryAction>
+                  </ListItem>
+                  <Divider/>
+                </React.Fragment>
+              )
+            })}
+          </List>
+        )}
+        {history && history.length == 0 && (
+          <div className={classes.noRecordDiv}>
+            <Typography variant='h5'>No record</Typography>
+          </div>
+        )}
       </div>
-
-      {/* Display Weather */}
-      {weather && (
-        <div style={{padding: '16px'}}>
-          <Typography variant='caption'>{`${weather.name}, ${weather.sys.country}`}</Typography>
-          <Typography variant='h3'>{weather.weather[0].main}</Typography>
-          {generateDiv('Description: ', weather.weather[0].description)}
-          {generateDiv('Temperature: ', `${weather.main.temp_min}°C ~ ${weather.main.temp_max}°C`)}
-          {generateDiv('Humidity: ', `${weather.main.humidity}%`)}
-          {generateDiv('Time: ', moment(weather.time).format('YYYY-MM-DD HH:mm A'))}
-        </div>
-      )}
-
-      {error && (
-        <div className={clsx("alert",classes.errorDiv)}>
-          <div style={{paddingLeft: '8px', color: 'black'}}>Not found</div>
-        </div>
-      )}
-
-      {/* Search History */}
-      {generateHeader(`Search History`)}
-      <List>
-        {history.map((weather, index) => {
-          return (
-            <React.Fragment key={index}>
-              <ListItem>
-                <ListItemText
-                  primary={`${index+1}. ${weather.name}, ${weather.sys.country}`}
-                />
-                <ListItemSecondaryAction>
-                  <div className="flex items-center">
-                    <Typography>{moment(weather.time).format('HH:mm:ss A')}</Typography>
-                    <IconButton onClick={() => showPreviousOnClick(weather)}>
-                      <SearchIcon />
-                    </IconButton>
-                    <IconButton onClick={() => deleteOnClick(weather.time)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </div>
-                </ListItemSecondaryAction>
-              </ListItem>
-              <Divider/>
-            </React.Fragment>
-          )
-        })}
-      </List>
-    </div>
+    </Paper>
+    
   );
 }
 

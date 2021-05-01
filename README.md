@@ -10,8 +10,13 @@
 3. Moment.js
 
   This should be the right datetime library for NodeJS as compared to pure javascript Date().
-  
-There are other libraries I usually use for react like lodash (util) and tailwind (css). However this test is very straightforward so it is not necessarry to use them.
+
+# Notes
+1. There are other libraries that I usually use for react like lodash (util) and tailwind (css). However this test is pretty straightforward so it is not necessarry to use them.
+
+2. I did not use redux as this test does not involve very complex state change between multiple components.
+
+3. I used flex layout for this test, so it should work for most resolutions.
   
 # Installation
 1. npm install
